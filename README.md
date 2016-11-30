@@ -1,10 +1,10 @@
 Zemberek-NLP
 ============
 
-Here is the the new home of the Zemberek project.  
-Zemberek-NLP is a Natural Language Processing library. Some modules are specifically developed for Turkish language.
+Here is the the new home of the Zemberek project.
+Zemberek-NLP is a Natural Language Processing library that provides basic NLP tools for processing Turkish text.
 
-Latest version is 0.9.2 (April 7th 2016)
+Latest version is 0.9.3 (November 22nd 2016)
 
 ## FAQ 
 
@@ -30,19 +30,14 @@ And dependecies (For example morphology):
         <dependency>
             <groupId>zemberek-nlp</groupId>
             <artifactId>morphology</artifactId>
-            <version>0.9.2</version>
+            <version>0.9.3</version>
         </dependency>
     </dependencies>
 
 ### Jar distributions
 
-Jar distributions may not be the latest versions. You can generate jar files with maven. 
-
-[Zemberek-NLP-Distributions] (https://github.com/ahmetaa/zemberek-nlp-distributions) page has versions and
+[Google docs page] (https://drive.google.com/#folders/0B9TrB39LQKZWSjNKdVcwWUxxUm8) page has versions and
 separate module and dependent jars.
-
-Alternatively there is a public [Google docs page] (https://drive.google.com/#folders/0B9TrB39LQKZWSjNKdVcwWUxxUm8)
-for distributions downloads.
 
 ### Examples
 

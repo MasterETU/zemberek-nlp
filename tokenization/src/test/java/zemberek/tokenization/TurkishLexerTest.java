@@ -1,14 +1,20 @@
 package zemberek.tokenization;
 
+import com.google.common.base.Stopwatch;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import zemberek.core.logging.Log;
 import zemberek.tokenizer.antlr.TurkishLexer;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class TurkishLexerTest {
 
@@ -89,7 +95,9 @@ public class TurkishLexerTest {
 
     @Test
     public void testAlphaNumerical() {
-        matchSentences("F-16'yı, (H1N1) H1N1'den.", "F-16'yı , ( H1N1 ) H1N1'den .");
+        matchSentences(
+                "F-16'yı, (H1N1) H1N1'den.",
+                "F-16'yı , ( H1N1 ) H1N1'den .");
     }
 
 
@@ -113,6 +121,79 @@ public class TurkishLexerTest {
     }
 
     @Test
+    public void testTokenBoundaries() {
+        List<Token> tokens = getTokens("bir av. geldi.");
+        Token t0 = tokens.get(0);
+        Assert.assertEquals("bir", t0.getText());
+        Assert.assertEquals(0, t0.getStartIndex());
+        Assert.assertEquals(2, t0.getStopIndex());
+        Assert.assertEquals(0, t0.getTokenIndex());
+        Assert.assertEquals(0, t0.getCharPositionInLine());
+
+        Token t1 = tokens.get(1);
+        Assert.assertEquals(" ", t1.getText());
+        Assert.assertEquals(3, t1.getStartIndex());
+        Assert.assertEquals(3, t1.getStopIndex());
+        Assert.assertEquals(1, t1.getTokenIndex());
+        Assert.assertEquals(3, t1.getCharPositionInLine());
+
+        Token t2 = tokens.get(2);
+        Assert.assertEquals("av.", t2.getText());
+        Assert.assertEquals(4, t2.getStartIndex());
+        Assert.assertEquals(6, t2.getStopIndex());
+        Assert.assertEquals(2, t2.getTokenIndex());
+        Assert.assertEquals(4, t2.getCharPositionInLine());
+
+        Token t3 = tokens.get(3);
+        Assert.assertEquals(" ", t3.getText());
+        Assert.assertEquals(7, t3.getStartIndex());
+        Assert.assertEquals(7, t3.getStopIndex());
+        Assert.assertEquals(3, t3.getTokenIndex());
+        Assert.assertEquals(7, t3.getCharPositionInLine());
+
+        Token t4 = tokens.get(4);
+        Assert.assertEquals("geldi", t4.getText());
+        Assert.assertEquals(8, t4.getStartIndex());
+        Assert.assertEquals(12, t4.getStopIndex());
+        Assert.assertEquals(4, t4.getTokenIndex());
+        Assert.assertEquals(8, t4.getCharPositionInLine());
+
+        Token t5 = tokens.get(5);
+        Assert.assertEquals(".", t5.getText());
+        Assert.assertEquals(13, t5.getStartIndex());
+        Assert.assertEquals(13, t5.getStopIndex());
+        Assert.assertEquals(5, t5.getTokenIndex());
+        Assert.assertEquals(13, t5.getCharPositionInLine());
+    }
+
+    @Test
+    public void testAbbreviations2() {
+        matchSentences(
+                "Prof. Dr. Ahmet'e git! dedi Av. Mehmet.",
+                "Prof. Dr. Ahmet'e git ! dedi Av. Mehmet .");
+    }
+
+    @Test
+    public void testCapitalLettersAfterQuotesIssue64() {
+        matchSentences("Ankaraya.", "Ankaraya .");
+        matchSentences("Ankara'ya.", "Ankara'ya .");
+        matchSentences("ANKARA'ya.", "ANKARA'ya .");
+        matchSentences("ANKARA'YA.", "ANKARA'YA .");
+        matchSentences("Ankara'YA.", "Ankara'YA .");
+        matchSentences("Ankara'Ya.", "Ankara'Ya .");
+    }
+
+    @Test
+    public void testUnknownWord1() {
+        matchSentences("زنبورك", "زنبورك");
+    }
+
+    @Test
+    public void testDotInMiddle() {
+        matchSentences("Ali.gel.", "Ali . gel .");
+    }
+
+    @Test
     public void testPunctuation() {
         matchSentences(".,!:;$%\"\'()[]{}&@", ". , ! : ; $ % \" \' ( ) [ ] { } & @");
         matchToken("...", "...");
@@ -129,9 +210,52 @@ public class TurkishLexerTest {
     }
 
     @Test
-    public void testUnknown() {
-        matchToken("~", TurkishLexer.Unknown, "~");
-        //matchToken("AaAa", TurkishLexer.Unknown, "AaAa");
+    public void testTokenizeDoubleQuote() {
+        matchSentences("\"Soner\"'e boyle dedi", "\" Soner \" ' e boyle dedi");
+        matchSentences("Hey \"Ali\" gel.", "Hey \" Ali \" gel .");
+        matchSentences("\"Soner boyle dedi\"", "\" Soner boyle dedi \"");
     }
+
+    @Test
+    public void testNewline() {
+        matchSentences("Hey \nAli naber\n", "Hey \n Ali naber \n");
+        matchSentences("Hey\n\r \n\rAli\n \n\n \n naber\n", "Hey \n \r \n \r Ali \n \n \n \n naber \n");
+    }
+
+
+    //TODO: failing.
+    @Test
+    @Ignore
+    public void testUnknownWord() {
+        matchSentences("L'Oréal", "L'Oréal");
+    }
+
+    @Test
+    public void testTimeToken() {
+        matchSentences(
+                "Saat, 10:20 ile 00:59 arasinda.",
+                "Saat , 10:20 ile 00:59 arasinda .");
+        matchToken("10:20", TurkishLexer.TimeHours, "10:20");
+    }
+
+    @Test
+    @Ignore ("Not an actual test. Requires external data.")
+    public void performance() throws IOException {
+        // load a hundred thousand lines.
+        List<String> lines = Files.readAllLines(
+                Paths.get("/media/depo/data/aaa/corpora/dunya.100k"));
+        Stopwatch clock = Stopwatch.createStarted();
+        long tokenCount = 0;
+        for (String line : lines) {
+            List<Token> tokens = getTokens(line);
+            tokenCount +=  tokens.stream().filter(s ->
+                    (s.getType() != TurkishLexer.SpaceTab)).count();
+        }
+        long elapsed = clock.elapsed(TimeUnit.MILLISECONDS);
+        System.out.println(elapsed);
+        System.out.println("Token count = " + tokenCount);
+        System.out.println("Speed (tps) = " + tokenCount * 1000d / elapsed);
+    }
+
 
 }

@@ -1,9 +1,6 @@
 package zemberek.morphology.lexicon.graph;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import zemberek.core.logging.Log;
 import zemberek.morphology.lexicon.DictionaryItem;
 import zemberek.morphology.lexicon.SuffixForm;
@@ -55,24 +52,25 @@ public class DynamicLexiconGraph {
         final String surfaceForm = stemNode.surfaceForm;
         if (multiStems.containsKey(surfaceForm)) {
             multiStems.remove(surfaceForm, stemNode);
-        } else if (singleStems.containsKey(surfaceForm)) {
+        } else if (singleStems.containsKey(surfaceForm)
+                && singleStems.get(surfaceForm).getDictionaryItem().equals(stemNode.dictionaryItem)) {
             singleStems.remove(surfaceForm);
         }
         stemNodes.remove(stemNode);
     }
 
     public List<StemNode> getMatchingStemNodes(String stem) {
-
         if (singleStems.containsKey(stem)) {
             return Lists.newArrayList(singleStems.get(stem));
         } else if (multiStems.containsKey(stem)) {
             return Lists.newArrayList(multiStems.get(stem));
-        } else
+        } else {
             return Collections.emptyList();
+        }
     }
 
     private boolean containsNode(StemNode node) {
-        return multiStems.containsEntry(node.surfaceForm, node) || singleStems.containsKey(node.surfaceForm);
+        return stemNodes.contains(node);
     }
 
     private void addNodes(StemNode... nodes) {

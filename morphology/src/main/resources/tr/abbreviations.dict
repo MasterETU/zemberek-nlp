@@ -10,7 +10,7 @@ Ab [pr:abe]
 Abb
 Abc
 Abe
-Abs
+Abs [pr:abese]
 Ace
 Aç
 Add
@@ -193,7 +193,7 @@ Dhl
 Dia
 Die
 Dj
-Dk
+dk [Pr:dakika; Ref:dakika_Noun_Time]
 Dlh
 Dm
 Dna
@@ -208,7 +208,7 @@ Dp
 Dpb
 Dpt
 Dpü
-Dr [Pr:doktor]
+Dr [Pr:doktor;Ref:doktor]
 Ds
 Dsg
 Dsi
@@ -299,6 +299,7 @@ Gik
 Gil
 Gli
 Gmk
+gmsh [A:Ext;Pr:gesemehe,gesemeha]
 Gn
 Gns
 Go
@@ -307,9 +308,10 @@ Gö
 Gp
 Gps
 Gpu
+gr [Pr:gram; Index:1; Ref:gram]
 Gru
 Gs
-Gsm
+Gsm [Pr:ciesem]
 Gso
 Gss
 Gt

@@ -6,21 +6,16 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
-import edu.berkeley.nlp.lm.ConfigOptions;
-import edu.berkeley.nlp.lm.StringWordIndexer;
-import edu.berkeley.nlp.lm.io.ArpaLmReader;
-import edu.berkeley.nlp.lm.io.LmReaders;
 import zemberek.core.io.SimpleTextWriter;
 import zemberek.core.io.Strings;
 import zemberek.lm.apps.ConvertToSmoothLm;
 import zemberek.lm.compression.SmoothLm;
-import zemberek.morphology.parser.MorphParse;
-import zemberek.morphology.parser.SentenceMorphParse;
+import zemberek.morphology.analysis.WordAnalysis;
+import zemberek.morphology.analysis.SentenceAnalysis;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -80,15 +75,6 @@ public class Z3MarkovModelDisambiguator extends Z3AbstractDisambiguator implemen
                 "-smoothFile",
                 binaryFile.getAbsolutePath(),
                 "-spaceUsage","16-8-8");
-    }
-
-    public static void generateArpaLm(File corpus, File arpaFile) {
-        final StringWordIndexer wordIndexer = new StringWordIndexer();
-        wordIndexer.setStartSymbol(ArpaLmReader.START_SYMBOL);
-        wordIndexer.setEndSymbol(ArpaLmReader.END_SYMBOL);
-        wordIndexer.setUnkSymbol(ArpaLmReader.UNK_SYMBOL);
-        LmReaders.createKneserNeyLmFromTextFiles(
-                Arrays.asList(corpus.getAbsolutePath()), wordIndexer, 3, arpaFile, new ConfigOptions());
     }
 
     public void test(File testFile) throws IOException {
@@ -212,14 +198,14 @@ public class Z3MarkovModelDisambiguator extends Z3AbstractDisambiguator implemen
     }
 
     @Override
-    public void disambiguate(SentenceMorphParse sentenceParse) {
+    public void disambiguate(SentenceAnalysis sentenceParse) {
         Ambiguous[] ambiguousSeq = getAmbiguousSequence(sentenceParse);
         int[] bestSequence = bestSequence(ambiguousSeq);
         for (int i = 0; i < bestSequence.length; i++) {
-            List<MorphParse> results = sentenceParse.getParses(i);
+            List<WordAnalysis> results = sentenceParse.getParses(i);
             if (results.size() == 1)
                 continue;
-            MorphParse tmp = results.get(0);
+            WordAnalysis tmp = results.get(0);
             results.set(0, results.get(bestSequence[i]));
             results.set(bestSequence[i], tmp);
         }
@@ -239,18 +225,18 @@ public class Z3MarkovModelDisambiguator extends Z3AbstractDisambiguator implemen
         }
     }
 
-    public Ambiguous[] getAmbiguousSequence(SentenceMorphParse sentence) {
+    public Ambiguous[] getAmbiguousSequence(SentenceAnalysis sentence) {
         Ambiguous[] awords = new Ambiguous[sentence.size() + 3];
         awords[0] = startWord;
         awords[1] = startWord;
         int i = 2;
-        for (SentenceMorphParse.Entry entry : sentence) {
+        for (SentenceAnalysis.Entry entry : sentence) {
             int[] roots = new int[entry.parses.size()];
             int[] lastIgs = new int[entry.parses.size()];
             int j = 0;
-            for (MorphParse parse : entry.parses) {
+            for (WordAnalysis parse : entry.parses) {
                 String rootPart = parse.dictionaryItem.lemma;
-                MorphParse.InflectionalGroup firstIg = parse.inflectionalGroups.get(0);
+                WordAnalysis.InflectionalGroup firstIg = parse.inflectionalGroups.get(0);
                 if (firstIg.suffixList.size() == 0)
                     rootPart += firstIg.formatNoSurface();
                 else {
